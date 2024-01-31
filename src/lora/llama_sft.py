@@ -2,8 +2,8 @@
 # Implements parameter-efficient or full parameters supervised fine-tuning for LLaMa model.
 # This code is inspired by
 # https://github.com/tatsu-lab/stanford_alpaca/blob/main/train.py and https://www.mlexpert.io/machine-learning/tutorials/alpaca-fine-tuning
-
-
+import os
+os.environ['TRANSFORMERS_CACHE'] = '/datasets/Large_Language_Models'
 import transformers
 from transformers import (
     AutoTokenizer, 
