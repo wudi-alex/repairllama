@@ -7,7 +7,7 @@ accelerate launch llama_sft.py \
     --do_eval True \
     --fp16 True \
     --output_dir /projects/ksun3/dwu25/trained_models/classinfo_mutation_output \
-    --num_train_epochs 2 \
+    --num_train_epochs 1 \
     --per_device_train_batch_size 32 \
     --per_device_eval_batch_size 1 \
     --gradient_accumulation_steps 1 \
