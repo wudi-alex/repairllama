@@ -3,10 +3,11 @@
 # This code is inspired by
 # https://github.com/tatsu-lab/stanford_alpaca/blob/main/train.py and https://www.mlexpert.io/machine-learning/tutorials/alpaca-fine-tuning
 import os
+
 os.environ['TRANSFORMERS_CACHE'] = '/datasets/Large_Language_Models'
 import transformers
 from transformers import (
-    AutoTokenizer, 
+    AutoTokenizer,
     AutoModelForCausalLM,
     DataCollatorForSeq2Seq,
     Trainer,
@@ -29,7 +30,7 @@ import torch
 import os
 import evaluate
 import functools
-from datasets import load_dataset
+from datasets import load_dataset, load_from_disk
 # import bitsandbytes as bnb
 import logging
 import json
@@ -37,11 +38,10 @@ import copy
 from typing import Dict, Optional, Sequence
 from dataclasses import dataclass, field
 
-
 # Lora settings
 LORA_R = 8
 LORA_ALPHA = 16
-LORA_DROPOUT= 0.05
+LORA_DROPOUT = 0.05
 LORA_TARGET_MODULES = [
     "q_proj",
     "v_proj",
@@ -89,9 +89,9 @@ def tokenize(text, tokenizer, max_seq_len=1024, add_eos_token=True):
         return None
 
     if (
-        result["input_ids"][-1] != tokenizer.eos_token_id
-        and len(result["input_ids"]) < max_seq_len
-        and add_eos_token
+            result["input_ids"][-1] != tokenizer.eos_token_id
+            and len(result["input_ids"]) < max_seq_len
+            and add_eos_token
     ):
         result["input_ids"].append(tokenizer.eos_token_id)
         result["attention_mask"].append(1)
@@ -140,7 +140,6 @@ def main():
         )
     model.config.use_cache = False
 
-
     def print_trainable_parameters(model):
         """
         Prints the number of trainable parameters in the model.
@@ -154,6 +153,7 @@ def main():
         print(
             f"trainable params: {trainable_params} || all params: {all_param} || trainable%: {100 * trainable_params / all_param}"
         )
+
     if training_args.is_lora:
         print_trainable_parameters(model)
 
@@ -182,7 +182,8 @@ def main():
             return {"input_ids": [], "attention_mask": [], "labels": []}
 
         tokenized_input_text = tokenize(input_text, tokenizer, max_seq_len=training_args.model_max_length)
-        input_len = len(tokenized_input_text["input_ids"]) # This a bug of llamatokenizer that it does not add eos token
+        input_len = len(
+            tokenized_input_text["input_ids"])  # This a bug of llamatokenizer that it does not add eos token
         tokenized_full_text["labels"] = [-100] * input_len + tokenized_full_text["labels"][input_len:]
         return tokenized_full_text
 
@@ -192,13 +193,13 @@ def main():
     if data_args.eval_file is not None:
         data_files["eval"] = data_args.eval_file
 
-    dataset = load_dataset(data_args.data_path, data_files=data_files)
+    # dataset = load_dataset(data_args.data_path, data_files=data_files)
+    dataset = load_from_disk(data_args.data_path)
     train_dataset = dataset["train"]
     eval_dataset = dataset["eval"]
 
     def print_dataset_length(dataset, name):
         print(f"Number of samples in {name} dataset after filtering: {len(dataset)}")
-
 
     train_dataset = train_dataset.map(generate_and_tokenize_prompt, num_proc=data_args.num_proc)
     eval_dataset = eval_dataset.map(generate_and_tokenize_prompt, num_proc=data_args.num_proc)
@@ -230,15 +231,15 @@ def main():
         decoded_labels = [label.strip() for label in decoded_labels]
 
         result = metric.compute(predictions=decoded_preds, references=decoded_labels)
-        return {'exact_match': result['exact_match']} 
+        return {'exact_match': result['exact_match']}
 
     compute_metrics_fn = functools.partial(compute_metrics, tokenizer=tokenizer)
 
     # Training
     trainer = Trainer(
-        model=model, 
+        model=model,
         train_dataset=train_dataset,
-        eval_dataset=eval_dataset,  
+        eval_dataset=eval_dataset,
         args=training_args,
         data_collator=data_collator,
         compute_metrics=compute_metrics_fn,
@@ -251,4 +252,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
