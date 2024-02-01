@@ -196,7 +196,7 @@ def main():
     # dataset = load_dataset(data_args.data_path, data_files=data_files)
     dataset = load_from_disk(data_args.data_path)
     train_dataset = dataset["train"]
-    eval_dataset = dataset["eval"]
+    eval_dataset = dataset["test"]
 
     def print_dataset_length(dataset, name):
         print(f"Number of samples in {name} dataset after filtering: {len(dataset)}")
